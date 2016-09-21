@@ -85,7 +85,7 @@ public extension UIImage {
     /// - parameter size: The image size.
     /// - parameter backgroundColor: The background color (optional).
     /// - returns: A string that will appear as icon with FontAwesome
-    public static func fontAwesomeIconWithName(_ name: FontAwesome, textColor: UIColor, size: CGSize, backgroundColor: UIColor = UIColor.clear()) -> UIImage {
+    public static func fontAwesomeIconWithName(_ name: FontAwesome, textColor: UIColor, size: CGSize, backgroundColor: UIColor = UIColor.clear) -> UIImage {
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = NSTextAlignment.center
         
@@ -93,7 +93,7 @@ public extension UIImage {
         let fontAspectRatio: CGFloat = 1.28571429
         
         let fontSize = min(size.width / fontAspectRatio, size.height)
-        let attributedString = AttributedString(string: String.fontAwesomeIconWithName(name), attributes: [NSFontAttributeName: UIFont.fontAwesomeOfSize(fontSize), NSForegroundColorAttributeName: textColor, NSBackgroundColorAttributeName: backgroundColor, NSParagraphStyleAttributeName: paragraph])
+        let attributedString = NSAttributedString(string: String.fontAwesomeIconWithName(name), attributes: [NSFontAttributeName: UIFont.fontAwesomeOfSize(fontSize), NSForegroundColorAttributeName: textColor, NSBackgroundColorAttributeName: backgroundColor, NSParagraphStyleAttributeName: paragraph])
         UIGraphicsBeginImageContextWithOptions(size, false , 0.0)
         attributedString.draw(in: CGRect(x: 0, y: (size.height - fontSize) / 2, width: size.width, height: fontSize))
         let image = UIGraphicsGetImageFromCurrentImageContext()
@@ -107,26 +107,26 @@ public extension UIImage {
 private class FontLoader {
     class func loadFont(_ name: String) {
         let bundle = Bundle(for: FontLoader.self)
-        var fontURL: URL
+        var fontURL: URL?
         let identifier = bundle.bundleIdentifier
 
         if identifier?.hasPrefix("org.cocoapods") == true {
             // If this framework is added using CocoaPods, resources is placed under a subdirectory
-            fontURL = bundle.urlForResource(name, withExtension: "otf", subdirectory: "FontAwesome.swift.bundle")!
+			fontURL = bundle.url(forResource: name, withExtension: "otf", subdirectory: "FontAwesome.swift.bundle")
         } else {
-            fontURL = bundle.urlForResource(name, withExtension: "otf")!
+			fontURL = bundle.url(forResource: name, withExtension: "otf")
         }
 
-        let data = try! Data(contentsOf: fontURL)
-
-        let provider = CGDataProvider(data: data)!
-        let font = CGFont(provider)
-
-        var error: Unmanaged<CFError>?
-        if !CTFontManagerRegisterGraphicsFont(font, &error) {
-            let errorDescription: CFString = CFErrorCopyDescription(error!.takeUnretainedValue())
-            let nsError = error!.takeUnretainedValue() as AnyObject as! NSError
-            NSException(name: NSExceptionName.internalInconsistencyException, reason: errorDescription as String, userInfo: [NSUnderlyingErrorKey: nsError]).raise()
-        }
+		if let fontURL = fontURL, let data = try? Data(contentsOf: fontURL) {
+			let provider = CGDataProvider(data: data as CFData)!
+			let font = CGFont(provider)
+			
+			var error: Unmanaged<CFError>?
+			if !CTFontManagerRegisterGraphicsFont(font, &error) {
+				let errorDescription: CFString = CFErrorCopyDescription(error!.takeUnretainedValue())
+				let nsError = error!.takeUnretainedValue() as AnyObject as! NSError
+				NSException(name: NSExceptionName.internalInconsistencyException, reason: errorDescription as String, userInfo: [NSUnderlyingErrorKey: nsError]).raise()
+			}
+		}
     }
 }
